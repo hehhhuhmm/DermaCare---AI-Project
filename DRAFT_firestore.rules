@@ -1,0 +1,69 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // 0. Default Deny
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Helper functions
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    // Experts are designated in a specific collection (internal)
+    function isExpert() {
+      return isSignedIn() && exists(/databases/$(database)/documents/experts/$(request.auth.uid));
+    }
+
+    // 1. User Profiles
+    match /users/{userId} {
+      allow get: if isOwner(userId);
+      allow create: if isOwner(userId) 
+                    && incoming().userId == userId
+                    && incoming().createdAt == request.time;
+      allow update: if isOwner(userId)
+                    && incoming().userId == userId
+                    && incoming().createdAt == existing().createdAt
+                    && incoming().diff(existing()).affectedKeys().hasOnly(['settings', 'displayName']);
+      allow delete: if false; // Users can deactivate but deletion is restricted for data integrity
+    }
+
+    // 2. Analysis Reports
+    match /analysis_reports/{reportId} {
+      allow list: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow get: if isSignedIn() && (resource.data.userId == request.auth.uid || isExpert());
+      
+      allow create: if isSignedIn() 
+                    && isOwner(incoming().userId)
+                    && isValidId(reportId)
+                    && incoming().timestamp == request.time;
+      
+      allow update: if false; // Reports are immutable once generated
+      
+      allow delete: if isSignedIn() && isOwner(existing().userId);
+    }
+
+    // 3. Logic Rules (Expert only)
+    match /logic_rules/{ruleId} {
+      allow read: if isSignedIn(); // Users need to read rules for transparency
+      allow write: if isExpert();
+    }
+  }
+}

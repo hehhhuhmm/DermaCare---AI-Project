@@ -1,0 +1,75 @@
+{
+  "entities": {
+    "UserProfile": {
+      "title": "User Profile",
+      "description": "User account information and privacy preferences.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "email": { "type": "string" },
+        "displayName": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "settings": {
+          "type": "object",
+          "properties": {
+            "privacyEnabled": { "type": "boolean" },
+            "federatedLearningOptIn": { "type": "boolean" }
+          }
+        }
+      },
+      "required": ["userId", "email", "createdAt"]
+    },
+    "AnalysisReport": {
+      "title": "Analysis Report",
+      "description": "Historical skin analysis results for a user.",
+      "type": "object",
+      "properties": {
+        "reportId": { "type": "string" },
+        "userId": { "type": "string" },
+        "timestamp": { "type": "string", "format": "date-time" },
+        "data": {
+          "type": "object",
+          "properties": {
+            "condition": { "type": "string" },
+            "confidence": { "type": "number" },
+            "severity": { "type": "string" },
+            "recommendations": { "type": "array", "items": { "type": "string" } },
+            "activeIngredients": { "type": "array", "items": { "type": "string" } }
+          }
+        },
+        "disentangledMetadata": {
+          "type": "object",
+          "description": "Pathology features extracted without identity data."
+        }
+      },
+      "required": ["reportId", "userId", "timestamp", "data"]
+    },
+    "LogicRule": {
+      "title": "Logic Rule",
+      "description": "Expert-defined business rules for skin diagnosis logic.",
+      "type": "object",
+      "properties": {
+        "ruleId": { "type": "string" },
+        "expertId": { "type": "string" },
+        "conditionKeyword": { "type": "string" },
+        "recommendationOverride": { "type": "string" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["ruleId", "expertId", "conditionKeyword"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "UserProfile",
+      "description": "Collection of user profile documents."
+    },
+    "/analysis_reports/{reportId}": {
+      "schema": "AnalysisReport",
+      "description": "Historical analysis reports."
+    },
+    "/logic_rules/{ruleId}": {
+      "schema": "LogicRule",
+      "description": "Expert business rules."
+    }
+  }
+}

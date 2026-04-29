@@ -1,0 +1,6 @@
+{
+  "name": "DermaCare",
+  "description": "AI-powered dermatology assistant for skin health analysis and personalized skincare recommendations.",
+  "requestFramePermissions": ["camera"],
+  "majorCapabilities": ["Image Analysis", "Skincare Advice"]
+}
